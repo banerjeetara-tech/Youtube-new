@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>My Feed</title>
+<style>
+:root{
+  --bg:#f1ede4; --paper:#f7f4ed; --card:#fffefb; --card2:#fbf8f1;
+  --ink:#3a3833; --ink-dim:#857f73; --line:#e5ded1;
+  --ai:#9a7aa6; --ai2:#bca0c5;
+  --hr:#c67e84; --hr2:#dda6aa;
+  --pod:#c39a4e; --pod2:#dbbb78;
+  --news:#8a9a5b; --news2:#abb884;
+  --gen:#6fa08c; --gen2:#9bc3b3;
+  --watch:#c2745a;
+  --shadow:0 12px 30px rgba(90,80,60,.13);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 520px at 88% -8%, rgba(154,122,166,.10), transparent 60%),
+    radial-gradient(900px 480px at -8% 6%, rgba(111,160,140,.11), transparent 55%),
+    radial-gradient(760px 440px at 50% 112%, rgba(195,154,78,.09), transparent 60%),
+    #f1ede4;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+  min-height:100vh; padding-bottom:env(safe-area-inset-bottom);
+}
+header{
+  position:sticky;top:0;z-index:30;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px 10px;
+  background:linear-gradient(180deg, rgba(241,237,228,.97), rgba(241,237,228,.75) 70%, transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  background:conic-gradient(from 220deg,var(--ai),var(--news),var(--gen),var(--pod),var(--hr),var(--ai));
+  display:grid;place-items:center;font-size:19px;color:#fff;box-shadow:var(--shadow)}
+.brand h1{font-size:20px;margin:0;letter-spacing:-.4px;font-weight:800;color:#1b1f27}
+.brand p{margin:2px 0 0;font-size:11.5px;color:var(--ink-dim);letter-spacing:.2px}
+.refresh{margin-left:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:12px;padding:9px 13px;font-size:13px;font-weight:700;display:flex;gap:7px;align-items:center;box-shadow:var(--shadow)}
+.refresh:active{transform:scale(.95)}
+.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:none;border:1px solid var(--line);background:var(--card);
+  color:var(--ink-dim);border-radius:999px;padding:9px 15px;font-size:13.5px;font-weight:700;
+  display:flex;align-items:center;gap:7px;white-space:nowrap;transition:.18s;box-shadow:0 2px 6px rgba(60,55,45,.05)}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim)}
+.tab.active{color:#fff;transform:translateY(-1px);box-shadow:var(--shadow)}
+.tab[data-k="new"].active{background:linear-gradient(135deg,#6b6457,#8c8475);}
+.tab[data-k="inbox"].active{background:linear-gradient(135deg,var(--watch),#ff9b5a);}
+.tab[data-k="ai"].active{background:linear-gradient(135deg,var(--ai),var(--ai2));}
+.tab[data-k="hr"].active{background:linear-gradient(135deg,var(--hr),var(--hr2));}
+.tab[data-k="pod"].active{background:linear-gradient(135deg,var(--pod),var(--pod2));color:#4a2f00}
+.tab[data-k="news"].active{background:linear-gradient(135deg,var(--news),var(--news2));}
+.tab[data-k="gen"].active{background:linear-gradient(135deg,var(--gen),var(--gen2));}
+.tab[data-k="towatch"].active{background:linear-gradient(135deg,var(--watch),#ff9b6b);}
+.tab[data-k="watched"].active{background:linear-gradient(135deg,#9a9384,#b3ad9d);}
+.tab[data-k="rec"].active{background:linear-gradient(135deg,var(--ai),var(--news));}
+.tab[data-k="recai"].active{background:linear-gradient(135deg,var(--ai),var(--ai2));}
+.tab[data-k="rechr"].active{background:linear-gradient(135deg,var(--hr),var(--hr2));}
+.tab[data-k="channels"].active{background:linear-gradient(135deg,#6b6457,#8c8475);}
+.tab .ct{font-size:11px;opacity:.8;font-weight:800}
+
+.subbar{display:none;gap:7px;overflow-x:auto;padding:6px 16px 2px;scrollbar-width:none}
+.subbar::-webkit-scrollbar{display:none}
+.subbar.show{display:flex}
+.chip{flex:none;border:1px solid var(--line);background:var(--paper);color:var(--ink-dim);
+  border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+main{padding:10px 14px 90px;max-width:760px;margin:0 auto}
+.status{font-size:12px;color:var(--ink-dim);padding:6px 4px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px;box-shadow:0 1px 4px rgba(60,55,45,.05)}
+
+.card{
+  display:flex;gap:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:16px;padding:10px;margin-bottom:11px;
+  box-shadow:0 6px 16px rgba(60,55,45,.08);position:relative;overflow:hidden;
+  animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card .accent{position:absolute;left:0;top:0;bottom:0;width:4px}
+.thumb{position:relative;flex:none;width:138px;height:78px;border-radius:11px;overflow:hidden;background:#e7e0d3}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .play{position:absolute;inset:0;display:grid;place-items:center;
+  background:radial-gradient(circle at center, rgba(0,0,0,.05), rgba(0,0,0,.35));font-size:26px;color:#fff;opacity:.95}
+.meta{flex:1;min-width:0;display:flex;flex-direction:column}
+.vtitle{font-size:13.5px;font-weight:700;line-height:1.32;margin:1px 0 5px;color:#1b1f27;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vchan{font-size:11.5px;color:var(--ink-dim);font-weight:600;display:flex;align-items:center;gap:6px}
+.tagdot{width:7px;height:7px;border-radius:50%}
+.vtime{font-size:11px;color:var(--ink-dim);margin-top:auto;opacity:.9}
+.actions{display:flex;gap:7px;margin-top:7px}
+.act{flex:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  border-radius:9px;padding:6px 10px;font-size:11.5px;font-weight:700;display:flex;gap:5px;align-items:center}
+.act:active{transform:scale(.93)}
+.act.go{background:linear-gradient(135deg,#c2745a,#cf8a6a);color:#fff;border:none}
+.act.done{background:var(--gen);color:#fff;border:none}
+
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+.cbtn{border:1px solid var(--line);background:var(--card);
+  border-radius:13px;padding:11px;text-align:left;color:var(--ink);position:relative;overflow:hidden;box-shadow:0 3px 10px rgba(60,55,45,.06)}
+.cbtn .cstripe{position:absolute;left:0;top:0;bottom:0;width:4px}
+.cbtn b{font-size:12.5px;font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;color:#1b1f27}
+.cbtn small{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+
+.empty{text-align:center;color:var(--ink-dim);padding:50px 20px;font-size:13.5px;line-height:1.6}
+.empty .big{font-size:40px;margin-bottom:10px}
+.loader{display:grid;place-items:center;padding:40px}
+.dots{display:flex;gap:6px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ai);animation:bb 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s;background:var(--news)}.dots i:nth-child(3){animation-delay:.3s;background:var(--gen)}
+@keyframes bb{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}
+
+.searchwrap{padding:0 16px 4px}
+.search{width:100%;background:var(--card);border:1px solid var(--line);color:var(--ink);
+  border-radius:12px;padding:11px 13px;font-size:14px;outline:none;box-shadow:0 2px 8px rgba(60,55,45,.05)}
+.search::placeholder{color:var(--ink-dim)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;
+  font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:60;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{font-size:11px;color:var(--ink-dim);background:var(--card);border:1px dashed var(--line);
+  border-radius:12px;padding:10px 12px;margin:4px 0 12px;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">&#9654;</div>
+    <div>
+      <h1>My Feed</h1>
+      <p id="sub">Your subscriptions &middot; free &middot; private</p>
+    </div>
+    <button class="refresh" id="refreshBtn"><span id="rIcon">&#10227;</span> Refresh</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+<div class="subbar" id="subbar"></div>
+<div class="searchwrap" id="searchwrap" style="display:none">
+  <input class="search" id="search" placeholder="Search your channels&hellip;">
+</div>
+
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== CHANNEL DATA injected below ====== */
+const CHANNELS=[["UC-CSyyi47VX1lD9zyeABW3w","Dhruv Rathee","General"],["UC-PQKtrPhk3JXyjUleBLgQQ","AI Edge","AI"],["UC00ifCvU8YOOzbL3RdiSTDw","GetsetflySCIENCE by Gaurav Thakur","General"],["UC16niRr50-MSBwiO3YDb3RA","BBC News","News"],["UC2Nwwobsd0ctkzVieXZvyQA","Ankit Inspires India","General"],["UC2UXDak6o7rBm23k3Vv5dww","Tina Huang","AI"],["UC2_Wb_-crFN9TGj9a7pv9XA","Jayant Mundhra","General"],["UC2ojq-nuP8ceeHqiroeKhBA","Nate Herk | AI Automation","General"],["UC3-IDKNIABI98_J2aqa2YjQ","Think School Hindi","General"],["UC3KK7ENB_ierAXvrxVNnbZQ","Ben AI","AI"],["UC3nj1JNLJvK9jV4KTbZw_qg","SparX by Mukesh Bansal","Podcast"],["UC3uJIdRFTGgLWrUziaHbzrg","NDTV Profit","News"],["UC3ypnIXMFRu69CAim2QaDPw","digitalOdd by Deepak Roy","General"],["UC4QZ_LsYcvcq7qOsOhpAX4A","ColdFusion","General"],["UC4ZVkG3RQPzvZk7alIVjcCg","theMITmonk","General"],["UC6JEz6BKg7hX7idKecN7QYA","Jist","General"],["UC6RJ7-PaXg6TIH2BzZfTV7w","Times Now","News"],["UC6WzPg6yxF9dQx2_O6R4lww","Nitish Rajput","General"],["UC6_a1EFyDRPlHX75091EcAQ","The Indian Dream","General"],["UC7qfffOXz7AYlnJlcfkMmZw","Monks & Warriors by Kaushal & Kaushalendra","General"],["UC83iGbaOhZR8AWNYYNzSNjg","India Global Review","News"],["UC87QeJ7WF71zJ5LF7vVVYrg","The Gaurav Thakur Show Clips","General"],["UC8butISFwT-Wl7EV0hUK0BQ","freeCodeCamp.org","AI"],["UC8uj-UFGDzAx3RfPzeRqnyA","Finshots TV","News"],["UC8uzDk1ubCmVW-dQJ-zwP8A","Tellis Like It Is","General"],["UC9D7QzaNDP11e4jI4ygU5Xg","NewsBook","News"],["UC9pxOEHrjsl7YKBSc7sl_KQ","YourStory","General"],["UC9wtYrne8S_5AVgxGnaz1-w","Tarun Kumar Kedia","General"],["UCAuUUnT6oDeKwE6v1NGQxug","TED","General"],["UCAupiXL76_Fx55VTTJ_2jnA","ETHRWorld","HR"],["UCB6qWJa9meGXQ3R_Ps1lupA","HR Leaders - Shaping the future of work.","General"],["UCC2iTo59lAdlTo88Dpzc9Mw","Biography Timeline","General"],["UCCJsQKOKArvDksacfT2ryQw","World Affairs by Unacademy","General"],["UCCgQaXjsJ6EdFPZeTFQoSyw","Brut India","News"],["UCCo9xACnSNwW1m6zjJkzSgQ","Eros Universe Big Picture","General"],["UCCx38Ms2ghsggBmkQcJ4-9g","Unravelled by Shankar","General"],["UCDhBfUEe-JKH-Y4-Z77QJOQ","Exploring Minds","General"],["UCESLZhusAkFfsNsApnjF_Cg","All-In Podcast","Podcast"],["UCGYlNGlloLLZiAL3zBgbMgQ","Josh Talks","General"],["UCGnt6wuMPoof3bvYUDSODNw","Wyngx","General"],["UCGq-a57w-aPwyi3pW7XLiHw","The Diary Of A CEO","Podcast"],["UCHOKvQW2N4kLVhKYn2bvF7A","Prakhar Gupta","General"],["UCHd62-u_v4DvJ8TCFtpi4GA","Washington Post","News"],["UCHyu2gwfAkOXWroIjvxVUCg","Career247","HR"],["UCI_mwTKUhicNzFrhm33MzBQ","ET Now","News"],["UCKZozRVHRYsYHGEyNKuhhdA","Think School","General"],["UCLWhUPF668K0jWTrMw-DpJg","The WillPower Star","General"],["UCNSdjX4ry9fICqeObdZPAZQ","Flying Beast","General"],["UCNU_lfiiWBdtULKOw6X0Dig","Krish Naik","AI"],["UCNnnebGhmIJ8MQ4X1HwphRw","The Official Steve Harvey","Podcast"],["UCOu85KXcYcEClNAeiKrDA6Q","Indian Silicon Valley by Jivraj Singh Sachar","Podcast"],["UCPGrgwfbkjTIgPoOh2q1BAg","David Ondrej","AI"],["UCPgfM-dk3XAb4T3DtT6Nwsw","CA Rahul Malodia","General"],["UCPxMZIFE856tbTfdkdjzTSQ","BeerBiceps","Podcast"],["UCQky96IjrfzJcSUiCogID6w","Shivanshu Agrawal","General"],["UCRgMIwmmh1-2k5HeTQ2cdkQ","Gaurav Thakur","General"],["UCRzYN32xtBf3Yxsx5BvJWJw","warikoo","General"],["UCSaf-7p3J_N-02p7jHzm5tA","The Quint","News"],["UCT2Iw5HWDSQa1lesPk23jMQ","SHLLOKA","General"],["UCUOjpYruRCB61RnB846trCQ","Vaad","General"],["UCWx7JXxm2xkTabER32I0GZg","The BarberShop with Shantanu","Podcast"],["UCXbvLfGlPtu15atjvl4c86Q","Siddharth Chopra","General"],["UCY6N8zZhs2V7gNTUxPuKWoQ","Ishan Sharma","General"],["UCYPvAwZP8pZhSMW8qs7cVCw","India Today","News"],["UCYalWwW79BdxmMTKUyBFj5g","Shubhankar Mishra","General"],["UCZFMm1mMw0F81Z37aaEzTUA","NDTV","News"],["UCZOKv_xnTzyLD9RJmbBUV9Q","Vedanta Society of New York","General"],["UC_E4px0RST-qFwXLJWBav8Q","Business Casual","News"],["UCaPHWiExfUWaKsUtENLCv5w","Business Today","News"],["UCasyz2FJZxtaxlYdHRgXKww","Shrishti Sahu","General"],["UCatL-c6pmnjzEOHSyjn-sHA","Khan GS Research Centre","General"],["UCb_2aQH7ZcW8tvlnJvjW8rQ","Live Hindi Facts","General"],["UCbk_QsfaFZG6PdQeCvaYXJQ","Jay Shetty Podcast","Podcast"],["UCbzVRTkX3bzNZuBd9In4XyA","Modern MBA","General"],["UCcBc0kafKTdcc5NAGEmA83g","Apni Pathshala","General"],["UCcYzLCs3zrQIBVHYA1sK2sw","Sadhguru","General"],["UCckHqySbfy5FcPP6MD_S-Yg","Times Of India","News"],["UCdoadna9HFHsxXWhafhNvKw","AWS Events","AI"],["UCee875A_K1BdvoV93OuWNeQ","HistoryBook","General"],["UCef1-8eOpJgud7szVPlZQAQ","CNN-News18","News"],["UCepBxbSrGZkgjgGJuY04c-Q","Professor Of How","General"],["UCetbO4FSZljvqT4ji_nFq9g","Be With Sam","General"],["UCeudZuDYinOWlWk69fTZCTg","Learn By KK Create","General"],["UCfBfBd-1kvCOPxVll8tBJ9Q","Bharatvaarta","General"],["UCfTChq0D-9sqe4P8TTuTI3g","SHRM India","HR"],["UCffs9TWLuHnZpKJwrHGuYVw","Aditya Saini Finance","General"],["UCfkne4JtM5Ir26-IJihliug","CrimeBook","General"],["UCh13OyDSm-Kb8ij3yZArtFg","Higgsfield AI","AI"],["UCh29s-RNWI6z63670hUv71Q","VOGUE India","General"],["UChWtJey46brNr7qHQpN6KLQ","The Wire","News"],["UChpleBmo18P08aKCIgti38g","Matt Wolfe","AI"],["UChqUTb7kYRX8-EiaN3XFrSQ","Reuters","News"],["UCk2U-Oqn7RXf-ydPqfSxG5g","Mel Robbins","Podcast"],["UCkAlEDBOaqMfe7la9vwIxOA","Baaten Bazar Ki (BBK)","General"],["UCkJ34UcwUfZm1RLTbmB_v9w","Krish Kothari","General"],["UCkO3uAmES7hmFfLOBRgzY_Q","Wronged","General"],["UCkox_p0dIE3bGN9yKonKZBA","Vyapari 2 CEO","General"],["UClXAalunTPaX1YV185DWUeg","Vaibhav Sisinty","General"],["UCloWBBZ3E9b9NGW3r30DN5A","AKTK","General"],["UCmTM_hPCeckqN3cPWtYZZcg","The Deshbhakt","News"],["UCnC8SAZzQiBGYVSKZ_S3y4Q","Nikhil Kamath","Podcast"],["UCneyi-aYq4VIBYIAQgWmk_w","Ranveer Allahbadia","Podcast"],["UCnpekFV93kB1O0rVqEKSumg","Backstage with Millionaires","Podcast"],["UCo2Pmy68kxzxFmqOcgv9m_A","Aditya Raj Kaul","News"],["UCpP-xAGNjhqMP8g_GAMENtA","Tweak India","General"],["UCpeRzRS1b1NvY4og1huE7jw","Dostcast","Podcast"],["UCrdPiSPVW0rtRsI002BX8iw","Mojo Story","News"],["UCrpEPrZCzOBIpz4XRMEaUAQ","India Today Conclave","General"],["UCs1Z_YBe_x1GuYcMA_-VIkg","Lyrics Bull","General"],["UCsDTy8jvHcwMvSZf_JGi-FA","Abhi and Niyu","General"],["UCsJbtfpVKHM7TRblaE1ucOA","Humans of Bombay","Podcast"],["UCtFQDgA8J8_iiwc5-KoAQlg","ANI News","News"],["UCtVrw9XA7bwOM_0EAxM5VTA","Timeless Threads","General"],["UCui4jxDaMb53Gdh-AZUTPAg","Liam Ottley","AI"],["UCuyRsHZILrU7ZDIAbGASHdA","ThePrint","News"],["UCvKrX11XR1Znxriqij0kMHA","BhaktiBook","General"],["UCw-kH-Od73XDAt7qtH9uBYA","World Economic Forum","General"],["UCwAnu01qlnVg1Ai2AbtTMaA","Jeff Su","AI"],["UCwXekc-fe9L4g4ImdvAlgdA","Women in the World","News"],["UCwcWc2zH0m66_CHILH1seNg","Wondery","Podcast"],["UCwqusr8YDwM-3mEYTDeJHzw","Republic World","News"],["UCy5NS7dKEs8stXh2de65zXw","The World with Richard Engel and Yalda Hakim","News"],["UCyAMoOTlfSGPxrtvh6M6wig","Shyam Meera Singh","General"],["UCySwLinG-gvRsbfyxwOVqMQ","The Female Quotient","HR"],["UCyUQxtFk3guy3WHaZ-2NNOg","Anurag Bansal","General"],["UCyVEEtk2lgJU2TEcu852b-g","learning never stops","General"],["UCz22l7kbce-uFJAoaZqxD1A","Gaur Gopal Das","General"],["UCz8QaiQxApLq8sLNcszYyJw","Firstpost","News"],["UCzI8K9xO_5E-4iCP7Km6cRQ","Faye D'Souza","News"],["UCzwCEE_PchiBULMnAJqhGVg","Raj Shamani","Podcast"]];
+/* ========================================= */
+
+const CAT = {
+  AI:  {name:"AI",       color:"var(--ai)",   icon:"✦"},
+  HR:  {name:"HR",       color:"var(--hr)",   icon:"◈"},
+  Podcast:{name:"Podcast",color:"var(--pod)", icon:"🎙"},
+  News:{name:"News",     color:"var(--news)", icon:"◉"},
+  General:{name:"General",color:"var(--gen)", icon:"●"},
+};
+function catColor(c){return (CAT[c]||CAT.General).color;}
+
+/* Free CORS-friendly RSS->JSON proxies. We try them in order until one works.
+   No API key, no login, no cost. */
+const PROXIES = [
+  id => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.youtube.com/feeds/videos.xml?channel_id='+id)}`,
+  id => `https://corsproxy.io/?url=${encodeURIComponent('https://www.youtube.com/feeds/videos.xml?channel_id='+id)}`,
+  id => `https://api.allorigins.win/raw?url=${encodeURIComponent('https://www.youtube.com/feeds/videos.xml?channel_id='+id)}`,
+];
+
+/* ---------- storage (browser-local, private) ---------- */
+const LS = {
+  get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let WATCHED = new Set(LS.get('yf_watched',[]));   // video ids marked watched
+let TOWATCH = LS.get('yf_towatch',[]);            // saved video objects
+let CACHE   = LS.get('yf_cache',{});              // id -> {t, items}
+let LASTSEEN= LS.get('yf_lastseen',0);            // for "new" badge
+let SEENRAW = LS.get('yf_seen',null);             // null => first run (set baseline)
+let SEEN    = new Set(SEENRAW||[]);               // every video id ever observed
+let INBOX   = LS.get('yf_inbox',[]);              // auto-captured new uploads (to be watched)
+function saveWatched(){LS.set('yf_watched',[...WATCHED])}
+function saveTowatch(){LS.set('yf_towatch',TOWATCH)}
+function saveSeen(){LS.set('yf_seen',[...SEEN])}
+function saveInbox(){LS.set('yf_inbox',INBOX)}
+function saveCache(){LS.set('yf_cache',CACHE)}
+
+/* ---------- fetch one channel feed ---------- */
+async function fetchChannel(ch){
+  // serve from cache if fresh (<30 min)
+  const c = CACHE[ch.id];
+  if(c && (Date.now()-c.t < 30*60*1000)) return c.items;
+  for(const mk of PROXIES){
+    try{
+      const r = await fetch(mk(ch.id),{cache:'no-store'});
+      if(!r.ok) continue;
+      const ct = r.headers.get('content-type')||'';
+      let items=[];
+      if(ct.includes('json')){
+        const j = await r.json();
+        if(j.items){ // rss2json shape
+          items = j.items.map(it=>parseEntry({
+            title:it.title, link:it.link, pub:it.pubDate,
+            id:(it.guid||it.link||'').split(':').pop(),
+            thumb:(it.thumbnail|| (it.enclosure&&it.enclosure.link) ||'')
+          }, ch));
+        } else { continue; }
+      } else {
+        const txt = await r.text();
+        items = parseXML(txt, ch);
+      }
+      if(items.length){ CACHE[ch.id]={t:Date.now(),items}; saveCache(); return items; }
+    }catch(e){/* try next proxy */}
+  }
+  // fall back to stale cache if any
+  return c ? c.items : [];
+}
+
+function vidId(link){
+  const m = (link||'').match(/[?&]v=([^&]+)/) || (link||'').match(/watch\?v=([\w-]+)/);
+  return m?m[1]:(link||'').split('/').pop();
+}
+function parseEntry(e, ch){
+  const id = vidId(e.link) || e.id;
+  return {
+    vid:id, title:e.title||'(untitled)', link:e.link||('https://youtu.be/'+id),
+    chan:ch.title, cat:ch.cat,
+    thumb:e.thumb || `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+    ts: e.pub? new Date(e.pub).getTime() : 0
+  };
+}
+function parseXML(xml, ch){
+  const doc = new DOMParser().parseFromString(xml,'text/xml');
+  const entries = [...doc.getElementsByTagName('entry')];
+  return entries.map(en=>{
+    const get=(t,ns)=> {const el=en.getElementsByTagName(t)[0];return el?el.textContent:''};
+    const id = (en.getElementsByTagName('yt:videoId')[0]||{}).textContent
+            || vidId((en.getElementsByTagName('link')[0]||{}).getAttribute?.('href'));
+    const link = (en.getElementsByTagName('link')[0]||{}).getAttribute?.('href')||('https://youtu.be/'+id);
+    const pub = get('published')||get('updated');
+    return {vid:id,title:get('title'),link,chan:ch.title,cat:ch.cat,
+            thumb:`https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+            ts:pub?new Date(pub).getTime():0};
+  });
+}
+
+/* ---------- state ---------- */
+let STATE = {tab:'inbox', sub:'all', q:'', pool:[], loading:false};
+
+/* tab definitions */
+const TABS = [
+  {k:'inbox',   label:'🆕 New Drops',     dot:'var(--watch)'},
+  {k:'rec',     label:'✨ For You',        dot:'var(--ai)'},
+  {k:'ai',      label:'✦ New AI',         dot:'var(--ai)'},
+  {k:'hr',      label:'◈ New HR',         dot:'var(--hr)'},
+  {k:'new',     label:'All New',          dot:'#8c8475'},
+  {k:'towatch', label:'To Watch',         dot:'var(--watch)'},
+  {k:'watched', label:'Watched',          dot:'#9a9384'},
+  {k:'pod',     label:'Podcasts',         dot:'var(--pod)'},
+  {k:'news',    label:'News',             dot:'var(--news)'},
+  {k:'gen',     label:'General',          dot:'var(--gen)'},
+  {k:'recai',   label:'AI Picks',         dot:'var(--ai)'},
+  {k:'rechr',   label:'HR Picks',         dot:'var(--hr)'},
+  {k:'channels',label:'All Channels',     dot:'#8c8475'},
+];
+const CATKEY = {ai:'AI',hr:'HR',pod:'Podcast',news:'News',gen:'General'};
+
+/* ---------- render tabs ---------- */
+function renderTabs(){
+  const counts = {
+    inbox:INBOX.length,
+    towatch:TOWATCH.length,
+    watched:WATCHED.size,
+    channels:CHANNELS.length
+  };
+  document.getElementById('tabs').innerHTML = TABS.map(t=>{
+    const ct = counts[t.k]!=null?`<span class="ct">${counts[t.k]}</span>`:'';
+    return `<button class="tab ${STATE.tab===t.k?'active':''}" data-k="${t.k}">
+      <span class="dot" style="background:${t.dot}"></span>${t.label}${ct}</button>`;
+  }).join('');
+  [...document.querySelectorAll('.tab')].forEach(b=>{
+    b.onclick=()=>{STATE.tab=b.dataset.k;STATE.sub='all';STATE.q='';switchTab();}
+  });
+}
+
+/* ---------- main switch ---------- */
+async function switchTab(){
+  renderTabs();
+  const sb=document.getElementById('subbar');
+  const sw=document.getElementById('searchwrap');
+  sb.classList.remove('show'); sw.style.display='none';
+
+  const k=STATE.tab;
+  if(k==='channels'){ sw.style.display='block'; renderChannels(); return; }
+  if(k==='towatch'){ renderList(TOWATCH.slice().reverse(),'No saved videos yet.','Tap “＋ Watch later” on any video to save it here.'); return; }
+  if(k==='watched'){
+    const w=STATE.pool.filter(v=>WATCHED.has(v.vid));
+    renderList(w,'Nothing marked watched yet.','Tap “✓ Watched” on a video to move it here.'); return;
+  }
+  // category tabs + new + rec + inbox need the pool loaded (to detect new drops)
+  if(!STATE.pool.length){ await loadPool(); }
+  if(k==='inbox'){ renderInbox(); return; }
+  if(['ai','hr','pod','news','gen'].includes(k)){
+    showSubbar(CATKEY[k]);
+  }
+  renderForTab();
+}
+
+/* ---------- New Drops inbox (auto-captured) ---------- */
+function renderInbox(){
+  // drop anything already watched
+  INBOX = INBOX.filter(v=>!WATCHED.has(v.vid)); saveInbox();
+  const m=document.getElementById('main');
+  const head=`<div class="hint">⚡ New videos &amp; podcasts from your subscriptions land here <b>automatically</b> the moment a Refresh finds them — your auto “to be watched” list. They stay until you mark them ✓ Watched.
+    ${INBOX.length?`<br><button class="act" id="clearInbox" style="margin-top:8px">🗑 Clear all</button>`:''}</div>`;
+  const status=`<div class="status">
+    <span class="pill">${INBOX.length} new to watch</span>
+    <span class="pill">${WATCHED.size} watched</span>
+  </div>`;
+  if(!INBOX.length){
+    m.innerHTML=head+status+`<div class="empty"><div class="big">🛎️</div><b>No new drops yet</b><br>When your subscribed channels post something new, hit Refresh and it auto-collects here.</div>`;
+  } else {
+    m.innerHTML=head+status+INBOX.map((v,i)=>card(v,i)).join('');
+    bindCards();
+  }
+  const cb=document.getElementById('clearInbox');
+  if(cb) cb.onclick=()=>{INBOX=[];saveInbox();renderTabs();renderInbox();toast('Inbox cleared');};
+}
+
+/* ---------- load the whole feed pool ---------- */
+async function loadPool(force){
+  if(STATE.loading) return;
+  STATE.loading=true;
+  document.getElementById('rIcon').classList.add('spin');
+  if(force){CACHE={};saveCache();}
+  setMain(`<div class="loader"><div><div class="dots"><i></i><i></i><i></i></div>
+    <div style="margin-top:14px;color:var(--ink-dim);font-size:12.5px" id="ldtxt">Checking your subscriptions for new drops…</div></div></div>`);
+
+  const out=[]; let done=0;
+  // fetch in small batches to be gentle on the free proxy
+  const batch=6;
+  for(let i=0;i<CHANNELS.length;i+=batch){
+    const slice=CHANNELS.slice(i,i+batch).map(c=>({id:c[0],title:c[1],cat:c[2]}));
+    const res=await Promise.all(slice.map(fetchChannel));
+    res.forEach(arr=>out.push(...arr));
+    done+=slice.length;
+    const lt=document.getElementById('ldtxt');
+    if(lt) lt.textContent=`Fetching… ${done}/${CHANNELS.length} channels`;
+  }
+  // newest first
+  out.sort((a,b)=>b.ts-a.ts);
+  STATE.pool=out;
+  STATE.loading=false;
+  document.getElementById('rIcon').classList.remove('spin');
+
+  // ===== auto-capture NEW uploads into the inbox =====
+  const firstRun = (SEENRAW===null);
+  const newOnes = out.filter(v=>v.vid && !SEEN.has(v.vid));
+  out.forEach(v=>{ if(v.vid) SEEN.add(v.vid); });
+  saveSeen(); SEENRAW=[...SEEN];
+  let added=0;
+  if(!firstRun){
+    const fresh = newOnes.filter(v=>!WATCHED.has(v.vid) && !INBOX.some(x=>x.vid===v.vid));
+    INBOX = [...fresh, ...INBOX];            // fresh already newest-first
+    if(INBOX.length>400) INBOX=INBOX.slice(0,400);
+    added=fresh.length; saveInbox();
+  }
+  // ===================================================
+
+  LASTSEEN=Date.now(); LS.set('yf_lastseen',LASTSEEN);
+  if(firstRun){
+    toast(out.length?`Baseline set · new uploads auto-save to 🆕`:'Could not load feeds — pull Refresh');
+  } else {
+    toast(out.length?(added?`⚡ ${added} new added to 🆕 New Drops`:`Up to date · ${out.length} videos`):'Could not load feeds — pull Refresh');
+  }
+}
+
+/* ---------- recommendation logic (based on watch) ---------- */
+function watchedChannels(){
+  const m={}; STATE.pool.forEach(v=>{if(WATCHED.has(v.vid))m[v.chan]=(m[v.chan]||0)+1});
+  // also weight to-watch saves
+  TOWATCH.forEach(v=>{m[v.chan]=(m[v.chan]||0)+0.5});
+  return m;
+}
+function recommend(filterCat){
+  const weights=watchedChannels();
+  const hasSignal=Object.keys(weights).length>0;
+  let pool=STATE.pool.filter(v=>!WATCHED.has(v.vid));
+  if(filterCat) pool=pool.filter(v=>v.cat===filterCat);
+  return pool.map(v=>{
+    let s=v.ts/1e10; // recency base
+    if(weights[v.chan]) s+= weights[v.chan]*5; // channels you watch
+    if(!hasSignal) s+= (v.cat==='AI'||v.cat==='HR')?2:0; // cold-start nudge
+    return {...v,_s:s};
+  }).sort((a,b)=>b._s-a._s).slice(0,60);
+}
+
+/* ---------- render decisions per tab ---------- */
+function renderForTab(){
+  const k=STATE.tab;
+  let list=[];
+  if(k==='new'){
+    // unified: newest from everything, podcasts surfaced
+    list=STATE.pool.filter(v=>!WATCHED.has(v.vid)).slice(0,80);
+    renderList(list,'No videos loaded.','Tap Refresh to pull your latest subscription videos.');
+    return;
+  }
+  if(['ai','hr','pod','news','gen'].includes(k)){
+    const cat=CATKEY[k];
+    list=STATE.pool.filter(v=>v.cat===cat && !WATCHED.has(v.vid));
+    if(STATE.sub!=='all') list=list.filter(v=>v.chan===STATE.sub);
+    renderList(list,`No ${cat} videos yet.`,'Try Refresh, or pick another channel chip above.');
+    return;
+  }
+  if(k==='rec'){ renderList(recommend(null),'No recommendations yet.','Mark a few videos as Watched so I can learn your taste.'); return; }
+  if(k==='recai'){ renderList(recommend('AI'),'No AI recommendations yet.','Watch some AI videos and I’ll surface more.'); return; }
+  if(k==='rechr'){ renderList(recommend('HR'),'No HR recommendations yet.','Watch some HR videos and I’ll surface more.'); return; }
+}
+
+/* ---------- sub-channel chip bar ---------- */
+function showSubbar(cat){
+  const sb=document.getElementById('subbar');
+  const chans=[...new Set(STATE.pool.filter(v=>v.cat===cat).map(v=>v.chan))].sort();
+  if(!chans.length){sb.classList.remove('show');return;}
+  sb.classList.add('show');
+  sb.innerHTML=`<button class="chip ${STATE.sub==='all'?'on':''}" data-c="all">All ${cat}</button>`+
+    chans.map(c=>`<button class="chip ${STATE.sub===c?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  [...sb.querySelectorAll('.chip')].forEach(ch=>ch.onclick=()=>{STATE.sub=ch.dataset.c;renderForTab();showSubbar(cat);});
+}
+
+/* ---------- render a list of videos ---------- */
+function renderList(list, emptyTitle, emptySub){
+  const m=document.getElementById('main');
+  let head='';
+  if(STATE.tab==='new'){
+    head=`<div class="hint">📌 Newest videos & podcasts from all 130 subscriptions, freshest first. Tap a card to watch on YouTube. Use ✓ to clear it, ＋ to save for later.</div>`;
+  } else if(STATE.tab==='rec'){
+    head=`<div class="hint">✨ <b>For You</b> — recommended from your subscriptions, ranked by the channels you actually watch. The more you mark ✓ Watched, the sharper this gets.</div>`;
+  } else if(STATE.tab==='recai'){
+    head=`<div class="hint">✦ <b>AI Picks</b> — AI videos ranked by your viewing habits. (For the plain newest AI uploads, use the <b>✦ New AI</b> tab.)</div>`;
+  } else if(STATE.tab==='rechr'){
+    head=`<div class="hint">◈ <b>HR Picks</b> — HR videos ranked by your viewing habits. (For the plain newest HR uploads, use the <b>◈ New HR</b> tab.)</div>`;
+  } else if(STATE.tab==='ai'){
+    head=`<div class="hint">✦ <b>New AI</b> — the latest uploads from your AI channels, freshest first. Filter by channel using the chips above.</div>`;
+  } else if(STATE.tab==='hr'){
+    head=`<div class="hint">◈ <b>New HR</b> — the latest uploads from your HR channels, freshest first.</div>`;
+  }
+  const status=`<div class="status">
+    <span class="pill">${list.length} videos</span>
+    <span class="pill">${WATCHED.size} watched</span>
+    <span class="pill">${TOWATCH.length} saved</span>
+  </div>`;
+  if(!list.length){
+    m.innerHTML=head+status+`<div class="empty"><div class="big">🍃</div><b>${emptyTitle}</b><br>${emptySub}</div>`;
+    return;
+  }
+  m.innerHTML=head+status+list.map((v,i)=>card(v,i)).join('');
+  bindCards();
+}
+function card(v,i){
+  const col=catColor(v.cat);
+  const saved=TOWATCH.some(x=>x.vid===v.vid);
+  return `<div class="card" style="animation-delay:${Math.min(i*22,400)}ms">
+    <div class="accent" style="background:${col}"></div>
+    <a class="thumb" href="${v.link}" target="_blank" rel="noopener">
+      <img loading="lazy" src="${v.thumb}" onerror="this.src='https://i.ytimg.com/vi/${v.vid}/hqdefault.jpg'">
+      <span class="play">▶</span>
+    </a>
+    <div class="meta">
+      <div class="vtitle">${esc(v.title)}</div>
+      <div class="vchan"><span class="tagdot" style="background:${col}"></span>${esc(v.chan)} · ${v.cat}</div>
+      <div class="vtime">${timeAgo(v.ts)}</div>
+      <div class="actions">
+        <a class="act go" href="${v.link}" target="_blank" rel="noopener">▶ Watch</a>
+        <button class="act done" data-w="${v.vid}">✓ Watched</button>
+        <button class="act" data-s='${esc(JSON.stringify(v))}'>${saved?'✓ Saved':'＋ Later'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function bindCards(){
+  [...document.querySelectorAll('[data-w]')].forEach(b=>b.onclick=()=>{
+    const id=b.dataset.w;
+    WATCHED.add(id);saveWatched();
+    INBOX=INBOX.filter(x=>x.vid!==id);saveInbox();   // clear from auto-inbox
+    toast('Marked watched');
+    b.closest('.card').style.opacity=.25;setTimeout(()=>switchTab(),350);
+  });
+  [...document.querySelectorAll('[data-s]')].forEach(b=>b.onclick=()=>{
+    const v=JSON.parse(b.dataset.s.replace(/&#39;/g,"'"));
+    if(TOWATCH.some(x=>x.vid===v.vid)){TOWATCH=TOWATCH.filter(x=>x.vid!==v.vid);toast('Removed from saved');}
+    else{TOWATCH.push(v);toast('Saved to watch later');}
+    saveTowatch();renderTabs();
+    b.textContent=TOWATCH.some(x=>x.vid===v.vid)?'✓ Saved':'＋ Later';
+  });
+}
+
+/* ---------- all channels grid ---------- */
+function renderChannels(){
+  const q=STATE.q.toLowerCase();
+  const list=CHANNELS.map(c=>({id:c[0],title:c[1],cat:c[2]}))
+    .filter(c=>!q||c.title.toLowerCase().includes(q))
+    .sort((a,b)=>a.title.localeCompare(b.title));
+  const m=document.getElementById('main');
+  m.innerHTML=`<div class="hint">🗂 All ${CHANNELS.length} subscribed channels. Tap any to open its latest uploads on YouTube.</div>
+    <div class="cgrid">${list.map(c=>`
+    <a class="cbtn" href="https://www.youtube.com/channel/${c.id}/videos" target="_blank" rel="noopener">
+      <span class="cstripe" style="background:${catColor(c.cat)}"></span>
+      <small style="color:${catColor(c.cat)}">${(CAT[c.cat]||CAT.General).icon} ${c.cat}</small>
+      <b>${esc(c.title)}</b>
+    </a>`).join('')}</div>`;
+}
+
+/* ---------- helpers ---------- */
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function timeAgo(ts){
+  if(!ts) return '';
+  const s=(Date.now()-ts)/1000;
+  if(s<3600) return Math.max(1,Math.floor(s/60))+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  if(s<86400*7) return Math.floor(s/86400)+'d ago';
+  if(s<86400*30) return Math.floor(s/86400/7)+'w ago';
+  return Math.floor(s/86400/30)+'mo ago';
+}
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1700);
+}
+function setMain(h){document.getElementById('main').innerHTML=h}
+
+/* ---------- wire up ---------- */
+document.getElementById('refreshBtn').onclick=async()=>{
+  STATE.pool=[];await loadPool(true);switchTab();
+};
+document.getElementById('search').oninput=e=>{STATE.q=e.target.value;renderChannels();};
+const fr=CHANNELS.length;
+document.getElementById('sub').textContent=`${fr} channels · free · private`;
+
+renderTabs();
+switchTab();  // auto-loads + checks for new drops on open
+
+// auto re-check when you come back to the app (e.g. switch back from another app)
+let lastCheck=Date.now();
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible' && Date.now()-lastCheck > 5*60*1000){
+    lastCheck=Date.now();
+    STATE.pool=[];
+    await loadPool();      // honours the 30-min cache, so it's fast
+    switchTab();
+  }
+});
+
+</script>
+</body></html>
